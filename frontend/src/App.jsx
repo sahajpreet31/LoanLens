@@ -161,6 +161,59 @@ function ImprovementSuggestions({ shapValues, riskLevel, mode }) {
   );
 }
 
+const MODEL_COMPARISON = [
+  { name: "Logistic Regression", auc: 0.822, ap: 0.598, selected: false },
+  { name: "Random Forest",       auc: 0.927, ap: 0.874, selected: false },
+  { name: "XGBoost",             auc: 0.942, ap: 0.897, selected: true  },
+];
+
+function ModelComparisonCard() {
+  const [open, setOpen] = useState(false);
+  const maxAuc = Math.max(...MODEL_COMPARISON.map(m => m.auc));
+
+  return (
+    <div style={s.scenariosCard}>
+      <button onClick={() => setOpen(!open)} style={s.modelToggle}>
+        <div>
+          <span style={s.scenariosTitle}>🔬 How was this model built?</span>
+          <span style={{ ...s.scenariosSub, display: "block" }}>
+            XGBoost was selected after comparing 3 models — {open ? "hide" : "view"} the methodology
+          </span>
+        </div>
+        <span style={{ fontSize: 18, color: "#94a3b8", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>⌄</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 16 }}>
+          {MODEL_COMPARISON.map(m => (
+            <div key={m.name} style={s.modelRow}>
+              <div style={s.modelRowTop}>
+                <span style={{ fontSize: 13, fontWeight: m.selected ? 700 : 500, color: m.selected ? "#2563eb" : "#475569" }}>
+                  {m.name} {m.selected && <span style={s.selectedBadge}>Selected</span>}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: m.selected ? "#2563eb" : "#94a3b8" }}>
+                  AUC-ROC: {m.auc.toFixed(3)}
+                </span>
+              </div>
+              <div style={s.modelBarTrack}>
+                <div style={{
+                  ...s.modelBarFill,
+                  width: `${(m.auc / maxAuc) * 100}%`,
+                  background: m.selected ? "linear-gradient(90deg,#2563eb,#1d4ed8)" : "#cbd5e1"
+                }} />
+              </div>
+            </div>
+          ))}
+          <p style={s.modelNote}>
+            XGBoost was selected for the highest AUC-ROC (0.942) and Average Precision (0.897) on held-out test data,
+            after SMOTE was applied to correct for class imbalance (~78% non-default / 22% default) in the training set.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FormPage({ mode }) {
   const [form, setForm]       = useState(defaultForm);
   const [errors, setErrors]   = useState({});
@@ -482,6 +535,9 @@ function FormPage({ mode }) {
           )}
         </div>
       )}
+
+      {/* Model methodology — bottom, collapsed by default, lender only */}
+      {mode === "lender" && <ModelComparisonCard />}
     </div>
   );
 }
@@ -673,6 +729,13 @@ const s = {
   scenarioLabel:   { fontSize: 13, fontWeight: 700 },
   scenarioDesc:    { fontSize: 12, color: "#64748b", marginTop: 2 },
   scenarioArrow:   { fontSize: 16, fontWeight: 700, opacity: 0.6 },
+  modelToggle:     { display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" },
+  modelRow:        { marginBottom: 14 },
+  modelRowTop:     { display: "flex", justifyContent: "space-between", marginBottom: 5 },
+  modelBarTrack:   { height: 8, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" },
+  modelBarFill:    { height: "100%", borderRadius: 99, transition: "width 0.5s ease" },
+  selectedBadge:   { fontSize: 10, fontWeight: 700, color: "#2563eb", background: "rgba(37,99,235,0.1)", borderRadius: 4, padding: "2px 6px", marginLeft: 6 },
+  modelNote:       { fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginTop: 14, paddingTop: 14, borderTop: "1px solid #f1f5f9" },
   card:            { background: "#fff", borderRadius: 14, padding: "28px 32px", boxShadow: "0 1px 3px rgba(0,0,0,0.06),0 8px 24px rgba(0,0,0,0.04)" },
   demoBanner:      { display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#475569" },
   demoClearBtn:    { fontSize: 12, fontWeight: 700, color: "#2563eb", background: "none", border: "1px solid #bfdbfe", borderRadius: 6, padding: "5px 12px", cursor: "pointer" },
